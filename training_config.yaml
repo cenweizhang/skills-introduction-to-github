@@ -1,0 +1,81 @@
+# SDXL Inpainting 训练配置文件
+# 根据您的硬件和数据集调整这些参数
+
+# ==================== 数据配置 ====================
+data:
+  data_dir: "./training_data"  # 训练数据目录
+  resolution: 1024  # SDXL默认分辨率
+  random_flip: true  # 是否随机水平翻转
+
+# ==================== 模型配置 ====================
+model:
+  pretrained_model_name_or_path: "stabilityai/stable-diffusion-xl-base-1.0"
+  # 或使用本地路径: "/path/to/local/model"
+  # 也可以使用中文Hub: "AI-ModelScope/stable-diffusion-xl-base-1.0"
+  revision: null
+  cache_dir: null
+
+# ==================== 训练配置 ====================
+training:
+  # 基础训练参数
+  train_batch_size: 1  # 根据GPU显存调整（SDXL很大，建议从1开始）
+  num_train_epochs: 100
+  max_train_steps: null  # 如果设置，将覆盖num_train_epochs
+  
+  # 梯度相关
+  gradient_accumulation_steps: 4  # 模拟更大的batch size
+  gradient_checkpointing: true  # 节省显存，建议启用
+  max_grad_norm: 1.0
+  
+  # 学习率
+  learning_rate: 1.0e-5  # SDXL推荐较小的学习率
+  scale_lr: false
+  lr_scheduler: "constant"  # 可选: linear, cosine, constant_with_warmup
+  lr_warmup_steps: 500
+  
+  # Adam优化器
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 0.01
+  adam_epsilon: 1.0e-8
+  use_8bit_adam: false  # 如果显存不足，可以启用
+
+# ==================== 高级训练选项 ====================
+advanced:
+  use_ema: false  # 指数移动平均，可以提高生成质量
+  mixed_precision: "fp16"  # 混合精度训练: fp16 或 bf16 (如果GPU支持)
+  seed: 42  # 随机种子，保证可复现性
+
+# ==================== 输出和日志 ====================
+output:
+  output_dir: "./output/sdxl-inpainting-finetuned"
+  logging_dir: "logs"
+  report_to: "tensorboard"  # tensorboard 或 wandb
+  
+  # 检查点保存
+  checkpointing_steps: 500  # 每隔多少步保存一次
+  checkpoints_total_limit: 3  # 最多保存多少个检查点
+  resume_from_checkpoint: null  # 从检查点恢复: "latest" 或具体路径
+
+# ==================== Hugging Face Hub ====================
+hub:
+  push_to_hub: false
+  hub_model_id: null  # 例如: "your-username/sdxl-inpainting-finetuned"
+  hub_token: null  # 或设置环境变量 HF_TOKEN
+
+# ==================== 数据加载 ====================
+dataloader:
+  num_workers: 0  # 数据加载线程数（Windows建议设为0）
+
+# ==================== 硬件配置建议 ====================
+# 
+# GPU显存需求（SDXL）:
+# - 24GB (RTX 3090/4090): batch_size=1, gradient_accumulation_steps=4, fp16
+# - 16GB (RTX 4070Ti): batch_size=1, gradient_accumulation_steps=8, fp16, 8bit_adam=true
+# - 12GB (RTX 3060): batch_size=1, gradient_accumulation_steps=16, fp16, 8bit_adam=true, 考虑使用LoRA
+# 
+# 如果显存不足，可以尝试:
+# 1. 降低 resolution (例如 512 或 768，但会影响SDXL质量)
+# 2. 启用 use_8bit_adam
+# 3. 增加 gradient_accumulation_steps
+# 4. 使用 LoRA 微调（需要修改训练脚本）
