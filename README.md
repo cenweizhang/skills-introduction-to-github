@@ -1,64 +1,331 @@
-<header>
+# SDXL图像修复模型微调项目
 
-<!--
-  <<< Author notes: Course header >>>
-  Include a 1280×640 image, course title in sentence case, and a concise description in emphasis.
-  In your repository settings: enable template repository, add your 1280×640 social image, auto delete head branches.
-  Add your open source license, GitHub uses MIT license.
--->
+基于Hugging Face Diffusers库的SDXL图像修复模型微调项目，支持使用自定义数据集训练图像修复模型。
 
-# Introduction to GitHub
+## 项目特性
 
-_Get started using GitHub in less than an hour._
+- 🎨 支持SDXL图像修复模型微调
+- 📊 多种数据格式支持（JSON、文件夹结构）
+- 🔧 灵活的掩码生成策略
+- ⚡ 混合精度训练支持
+- 📈 Wandb训练监控
+- 🚀 高效的推理接口
+- 🎯 多种预定义配置
 
-</header>
+## 环境要求
 
-<!--
-  <<< Author notes: Finish >>>
-  Review what we learned, ask for feedback, provide next steps.
--->
+- Python 3.8+
+- PyTorch 2.0+
+- CUDA 11.8+ (推荐)
+- 16GB+ GPU内存 (推荐)
 
-## Finish
+## 安装依赖
 
-_Congratulations, you've completed this course and joined the world of developers!_
+```bash
+pip install -r requirements.txt
+```
 
-<img src=https://octodex.github.com/images/collabocats.jpg alt=celebrate width=300 align=right>
+## 数据准备
 
-Here's a recap of your accomplishments:
+### 数据格式
 
-- You learned about GitHub, repositories, branches, commits, and pull requests.
-- You created a branch, a commit, and a pull request.
-- You merged a pull request.
-- You made your first contribution! :tada:
+支持以下数据格式：
 
-### What's next?
+#### 1. JSON格式
+```json
+[
+  {
+    "image_path": "path/to/image.jpg",
+    "mask_path": "path/to/mask.png",
+    "caption": "图像描述文本"
+  }
+]
+```
 
-If you'd like to make a profile README, use the quickstart instructions below or follow the instructions in the [Managing your profile README](https://docs.github.com/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme) article.
+#### 2. 文件夹结构
+```
+data/
+├── train/
+│   ├── images/
+│   │   ├── image1.jpg
+│   │   └── image2.jpg
+│   ├── masks/
+│   │   ├── image1.png
+│   │   └── image2.png
+│   └── captions/
+│       ├── image1.txt
+│       └── image2.txt
+```
 
-1. Make a new public repository with a name that matches your GitHub username.
-2. Create a file named `README.md` in its root. The "root" means not inside any folder in your repository.
-3. Edit the contents of the `README.md` file.
-4. If you created a new branch for your file, open and merge a pull request on your branch.
-5. Lastly, we'd love to hear what you thought of this course [in our discussion board](https://github.com/orgs/skills/discussions/categories/introduction-to-github).
+#### 3. 简单文件夹
+```
+data/
+├── train/
+│   ├── image1.jpg
+│   ├── image2.jpg
+│   └── ...
+```
 
-Check out these resources to learn more or get involved:
+### 数据要求
 
-- Are you a student? Check out the [Student Developer Pack](https://education.github.com/pack).
-- [Take another GitHub Skills course](https://github.com/skills).
-- [Read the GitHub Getting Started docs](https://docs.github.com/en/get-started).
-- To find projects to contribute to, check out [GitHub Explore](https://github.com/explore).
+- **图像格式**: JPG, PNG
+- **图像尺寸**: 建议1024x1024或更高
+- **掩码格式**: PNG (黑白图像，白色为需要修复的区域)
+- **描述文件**: 纯文本文件，每行一个描述
 
-<footer>
+## 快速开始
 
-<!--
-  <<< Author notes: Footer >>>
-  Add a link to get support, GitHub status page, code of conduct, license link.
--->
+### 1. 准备数据
 
----
+将您的训练数据放置在 `data/train/` 目录下，按照上述格式组织。
 
-Get help: [Post in our discussion board](https://github.com/orgs/skills/discussions/categories/introduction-to-github) &bull; [Review the GitHub status page](https://www.githubstatus.com/)
+### 2. 配置训练参数
 
-&copy; 2024 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+编辑 `config.yaml` 文件，调整训练参数：
 
-</footer>
+```yaml
+# 数据配置
+train_data_dir: "./data/train"
+resolution: 1024
+
+# 训练配置
+train_batch_size: 1
+max_train_steps: 10000
+learning_rate: 0.00001
+
+# 其他配置...
+```
+
+### 3. 开始训练
+
+```bash
+python train_sdxl_inpaint.py --config config.yaml
+```
+
+### 4. 使用微调后的模型
+
+```bash
+python inference.py \
+    --model_path ./sdxl-inpaint-finetuned \
+    --image input.jpg \
+    --prompt "修复后的图像描述" \
+    --output result.png
+```
+
+## 详细使用说明
+
+### 训练配置
+
+#### 基础配置
+- `pretrained_model_name_or_path`: 预训练模型路径
+- `train_data_dir`: 训练数据目录
+- `output_dir`: 输出目录
+- `resolution`: 图像分辨率
+- `train_batch_size`: 训练批次大小
+
+#### 训练参数
+- `max_train_steps`: 最大训练步数
+- `learning_rate`: 学习率
+- `gradient_accumulation_steps`: 梯度累积步数
+- `mixed_precision`: 混合精度类型
+
+#### 数据增强
+- `mask_generation_strategy`: 掩码生成策略
+  - `random`: 随机矩形掩码
+  - `irregular`: 不规则掩码
+  - `center`: 中心掩码
+- `mask_probability`: 掩码概率
+- `min_mask_ratio`: 最小掩码比例
+- `max_mask_ratio`: 最大掩码比例
+
+### 预定义配置
+
+项目提供了多种预定义配置：
+
+```python
+from config import get_config
+
+# 小规模训练
+config = get_config("small")
+
+# 中等规模训练
+config = get_config("medium")
+
+# 大规模训练
+config = get_config("large")
+
+# 调试模式
+config = get_config("debug")
+```
+
+### 训练监控
+
+启用Wandb监控：
+
+```yaml
+use_wandb: true
+wandb_project: "my-sdxl-inpaint"
+wandb_run_name: "experiment-1"
+```
+
+### 推理使用
+
+#### 基础推理
+```python
+from inference import SDXLInpaintInference
+
+# 创建推理器
+inference = SDXLInpaintInference("./sdxl-inpaint-finetuned")
+
+# 执行修复
+result = inference.inpaint(
+    image="input.jpg",
+    mask="mask.png",
+    prompt="修复后的图像描述",
+    num_inference_steps=50,
+    guidance_scale=7.5
+)
+
+# 保存结果
+result.save("output.png")
+```
+
+#### 批量处理
+```python
+# 批量修复
+results = inference.batch_inpaint(
+    image_paths=["img1.jpg", "img2.jpg"],
+    mask_paths=["mask1.png", "mask2.png"],
+    prompts=["描述1", "描述2"],
+    output_dir="./results"
+)
+```
+
+#### 交互式掩码创建
+```python
+# 加载图像
+image = Image.open("input.jpg")
+
+# 创建掩码
+mask = inference.create_mask_interactive(image, mask_type="rectangle")
+
+# 执行修复
+result = inference.inpaint(image, mask, "修复描述")
+```
+
+## 高级功能
+
+### 自定义数据加载器
+
+```python
+from data_loader import InpaintDataset
+
+dataset = InpaintDataset(
+    data_dir="./data/train",
+    tokenizer=tokenizer,
+    tokenizer_2=tokenizer_2,
+    size=1024,
+    mask_generation_strategy="irregular",
+    mask_probability=0.7
+)
+```
+
+### 自定义训练循环
+
+```python
+from train_sdxl_inpaint import SDXLInpaintTrainer
+from config import TrainingConfig
+
+# 加载配置
+config = TrainingConfig.from_yaml("config.yaml")
+
+# 创建训练器
+trainer = SDXLInpaintTrainer(config)
+
+# 开始训练
+trainer.train()
+```
+
+### 模型检查点
+
+训练过程中会自动保存检查点：
+
+```
+output_dir/
+├── checkpoint-1000/
+│   ├── unet/
+│   └── scheduler/
+├── checkpoint-2000/
+│   ├── unet/
+│   └── scheduler/
+└── ...
+```
+
+## 性能优化
+
+### 内存优化
+- 使用混合精度训练 (`mixed_precision: "fp16"`)
+- 启用梯度检查点 (`gradient_checkpointing: true`)
+- 调整批次大小和梯度累积步数
+
+### 训练加速
+- 使用多GPU训练
+- 启用数据并行
+- 优化数据加载器
+
+### 推理优化
+- 使用FP16精度
+- 启用注意力切片
+- 模型CPU卸载
+
+## 故障排除
+
+### 常见问题
+
+1. **内存不足**
+   - 减少批次大小
+   - 增加梯度累积步数
+   - 使用混合精度训练
+
+2. **训练速度慢**
+   - 检查数据加载器配置
+   - 启用混合精度
+   - 使用更快的存储设备
+
+3. **模型质量差**
+   - 调整学习率
+   - 增加训练步数
+   - 检查数据质量
+
+### 调试模式
+
+使用调试配置进行快速测试：
+
+```bash
+python train_sdxl_inpaint.py --config config_debug.yaml
+```
+
+## 贡献指南
+
+1. Fork项目
+2. 创建特性分支
+3. 提交更改
+4. 创建Pull Request
+
+## 许可证
+
+本项目基于MIT许可证开源。
+
+## 致谢
+
+- [Hugging Face Diffusers](https://github.com/huggingface/diffusers)
+- [Stability AI](https://stability.ai/)
+- [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
+
+## 更新日志
+
+### v1.0.0
+- 初始版本发布
+- 支持SDXL图像修复模型微调
+- 提供完整的训练和推理接口
+- 支持多种数据格式和配置选项
