@@ -1,0 +1,39 @@
+# SDXL Inpainting 微调训练依赖
+
+# 核心依赖
+torch>=2.0.0
+torchvision>=0.15.0
+diffusers>=0.24.0
+transformers>=4.35.0
+accelerate>=0.25.0
+
+# 图像处理
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# 数据和工具
+numpy>=1.24.0
+tqdm>=4.65.0
+pyyaml>=6.0
+
+# Hugging Face
+huggingface-hub>=0.19.0
+safetensors>=0.4.0
+
+# 日志和监控
+tensorboard>=2.14.0
+wandb>=0.16.0  # 可选，如果使用wandb
+
+# 优化器（可选，用于节省显存）
+bitsandbytes>=0.41.0  # 8bit Adam优化器
+
+# CUDA加速（根据您的CUDA版本选择）
+# xformers>=0.0.22  # 可选，用于加速attention计算
+# 安装方法: pip install xformers --index-url https://download.pytorch.org/whl/cu118
+
+# 注意事项：
+# 1. 请根据您的CUDA版本安装对应的PyTorch版本
+#    访问 https://pytorch.org 获取安装命令
+# 2. 如果在中国大陆，可以使用镜像源加速安装：
+#    pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# 3. xformers可以显著加速训练，但需要手动安装
