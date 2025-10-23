@@ -1,0 +1,95 @@
+# SDXL Inpainting 微调训练配置文件
+
+# 模型配置
+model:
+  pretrained_model_name_or_path: "diffusers/stable-diffusion-xl-1.0-inpainting-0.1"
+  revision: null
+  variant: null
+  cache_dir: "./models"
+
+# 数据配置
+data:
+  dataset_name: null  # 使用本地数据时设为null
+  dataset_config_name: null
+  train_data_dir: "./data/train"  # 训练数据目录
+  image_column: "image"
+  caption_column: "text"
+  max_train_samples: null  # 限制训练样本数，null表示使用全部
+  caption_file: "./data/captions.json"  # 标题文件路径
+
+# 图像处理配置
+image:
+  resolution: 1024
+  center_crop: false
+  random_flip: true
+  mask_type: "random"  # random, provided, mixed
+  mask_ratio_range: [0.1, 0.3]  # 遮罩面积比例范围
+
+# 训练配置
+training:
+  # 基础训练参数
+  train_batch_size: 1
+  num_train_epochs: 100
+  max_train_steps: null  # 如果设置，会覆盖num_train_epochs
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+  
+  # 学习率配置
+  learning_rate: 1e-5
+  scale_lr: false
+  lr_scheduler: "cosine"  # linear, cosine, cosine_with_restarts, polynomial, constant, constant_with_warmup
+  lr_warmup_steps: 500
+  
+  # 优化器配置
+  use_8bit_adam: false
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 1e-2
+  adam_epsilon: 1e-8
+  max_grad_norm: 1.0
+  
+  # 高级训练选项
+  prediction_type: null  # epsilon, v_prediction
+  snr_gamma: null  # SNR加权gamma，用于重新加权损失
+  noise_offset: 0.1  # 噪声偏移
+  input_perturbation: 0.1  # 输入扰动
+  
+  # 内存和性能优化
+  mixed_precision: "fp16"  # no, fp16, bf16
+  enable_xformers_memory_efficient_attention: true
+  allow_tf32: true
+  dataloader_num_workers: 4
+  
+  # EMA配置
+  use_ema: true
+
+# 验证配置
+validation:
+  validation_prompts:
+    - "修复图像中的缺失部分"
+    - "填补图像中的空白区域"
+    - "恢复图像的完整性"
+    - "修复损坏的图像区域"
+    - "高质量的图像修复"
+  validation_steps: 500
+  num_validation_images: 4
+
+# 保存和日志配置
+logging:
+  output_dir: "./output"
+  logging_dir: "logs"
+  report_to: "tensorboard"  # tensorboard, wandb
+  tracker_project_name: "sdxl-inpainting-finetune"
+  
+  # 检查点配置
+  checkpointing_steps: 1000
+  checkpoints_total_limit: 3
+  resume_from_checkpoint: null  # 检查点路径，或"latest"
+  
+  # Hub配置
+  push_to_hub: false
+  hub_model_id: null
+  hub_token: null
+
+# 随机种子
+seed: 42
